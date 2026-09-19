@@ -7,7 +7,16 @@ authors = [
     { name = "en0t1kk0re0", email = "tvoydid@gmail.com" }
 ]
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "aiosmtplib>=5.1.3",
+    "fastapi>=0.141.1",
+    "pwdlib>=0.3.1",
+    "pydantic>=2.13.5",
+    "pydantic-settings>=2.15.0",
+    "pyjwt>=2.14.0",
+    "redis>=8.1.0",
+    "sqlalchemy>=2.0.54",
+]
 
 [project.scripts]
 its-test = "its_test:main"
@@ -15,3 +24,6 @@ its-test = "its_test:main"
 [build-system]
 requires = ["uv_build>=0.12.6,<0.13.0"]
 build-backend = "uv_build"
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = ["fastapi.Depends", "fastapi.Header", "fastapi.Query", "fastapi.Path", "fastapi.Body"]
