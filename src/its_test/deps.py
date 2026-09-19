@@ -1,7 +1,8 @@
 import uuid
 from dataclasses import dataclass
 
-from fastapi import Depends, Header, HTTPException, status
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -16,27 +17,29 @@ class CurrentSession:
     user: User
     jti: str
 
-
-def _extract_bearer_token(authorization: str | None) -> str:
-    if not authorization or not authorization.lower().startswith("bearer "):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Отсутствует или некорректен заголовок Authorization",
-        )
-    return authorization.split(" ", 1)[1].strip()
-
+bearer_scheme = HTTPBearer(
+    scheme_name="JWT",
+    description="сюда access токен",
+    auto_error=False, 
+)
 
 async def get_current_session(
-    authorization: str | None = Header(default=None),
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
     db: AsyncSession = Depends(get_db),
 ) -> CurrentSession:
-    token = _extract_bearer_token(authorization)
+    if credentials is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Отсутствует заголовок Authorization",
+        )
+    token = credentials.credentials
 
     try:
         payload = decode_access_token(token)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(exc)) from exc
 
+    
     jti = payload.get("jti")
     user_id = payload.get("sub")
     if jti is None or user_id is None:
