@@ -1,7 +1,7 @@
 services:
   app:
     build: .
-    container_name: auth_app
+    container_name: its_test
     env_file:
       - .env.docker
     ports:
@@ -12,7 +12,7 @@ services:
       redis:
         condition: service_healthy
     command: >
-      sh -c "uv run alembic upgrade head && uv run uvicorn auth_app.main:app --host 0.0.0.0 --port 8000"
+      sh -c "uv run alembic upgrade head && uv run uvicorn its_test.main:app --host 0.0.0.0 --port 8000"
 
   postgres:
     image: postgres:16-alpine
@@ -24,7 +24,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      test: ["CMD-SHELL", "pg_isready -U its_test -d its_test_db"]
       interval: 5s
       timeout: 5s
       retries: 5

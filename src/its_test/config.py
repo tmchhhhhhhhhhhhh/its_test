@@ -1,25 +1,48 @@
+from pydantic import computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+    postgres_user: str
+    postgres_password: str
+    postgres_db: str
+    postgres_host: str
+    postgres_port: int
 
-    database_url: str = "postgresql+asyncpg://auth:auth@localhost:5432/auth_db"
+    redis_host: str
+    redis_port: int
+    redis_db: int
 
-    redis_url: str = "redis://localhost:6379/0"
-
-    jwt_secret: str = "change-me-in-prod"
+    jwt_secret: str
     jwt_algorithm: str = "HS256"
-    access_token_expire_minutes: int = 30
-    email_token_expire_minutes: int = 60 * 24  
+    access_token_expire_minutes: int
+    email_token_expire_minutes: int
 
-    smtp_host: str | None = None
+    smtp_host: str = ""
     smtp_port: int = 587
-    smtp_user: str | None = None
-    smtp_password: str | None = None
+    smtp_user: str = ""
+    smtp_password: str = ""
     smtp_from: str = "no-reply@example.com"
 
-    base_url: str = "http://localhost:8000"
+    base_url: str
+
+    model_config = SettingsConfigDict(
+        env_file=(".env"),
+        extra="ignore",
+    )
+
+    @computed_field
+    @property
+    def database_url(self) -> str:
+        return (
+            f"postgresql+asyncpg://{self.postgres_user}:{self.postgres_password}"
+            f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
+        )
+
+    @computed_field
+    @property
+    def redis_url(self) -> str:
+        return f"redis://{self.redis_host}:{self.redis_port}/{self.redis_db}"
 
 
 settings = Settings()
