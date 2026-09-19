@@ -8,7 +8,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from its_test.db import Base
 
 
-class Entity():
+class Entity:
     _abstract__ = True
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
