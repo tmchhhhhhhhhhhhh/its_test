@@ -1,5 +1,4 @@
 from fastapi import Depends, FastAPI, HTTPException, status
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from keycloak.exceptions import KeycloakAuthenticationError, KeycloakPostError
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
@@ -8,15 +7,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from its_test.db import get_db
 from its_test.schemas import MessageOut, TokenOut, UserCreate, UserLogin
 
-from .keycloak_client import keycloak_admin, keycloak_openid
+from .keycloak_client import get_current_user, keycloak_admin, keycloak_openid
 
 app = FastAPI()
-
-bearer_scheme = HTTPBearer(
-    scheme_name="JWT",
-    description="сюда access токен",
-    auto_error=False, 
-)
 
 
 @app.get("/health")
@@ -66,14 +59,6 @@ async def login(data: UserLogin):
         raise HTTPException(status_code=403, detail="Почта не подтверждена")
 
     return TokenOut(access_token=token["access_token"], expires_at="")
-
-
-async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)) -> dict:
-    try:
-        userinfo = await keycloak_openid.a_userinfo(credentials.credentials)
-    except KeycloakAuthenticationError as exc:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Токен недействителен") from exc
-    return userinfo
 
 
 @app.post("/auth/refresh", response_model=TokenOut)

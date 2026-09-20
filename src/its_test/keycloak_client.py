@@ -1,6 +1,16 @@
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from keycloak.exceptions import KeycloakAuthenticationError
+
 from keycloak import KeycloakAdmin, KeycloakOpenID, KeycloakOpenIDConnection
 
 from .config import settings
+
+bearer_scheme = HTTPBearer(
+    scheme_name="JWT",
+    description="сюда access токен",
+    auto_error=False, 
+)
 
 keycloak_openid = KeycloakOpenID(
     server_url=settings.keycloak_url,
@@ -19,3 +29,11 @@ keycloak_admin_connection = KeycloakOpenIDConnection(
     verify=True,
 )
 keycloak_admin = KeycloakAdmin(connection=keycloak_admin_connection)
+
+
+async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)) -> dict:
+    try:
+        userinfo = await keycloak_openid.a_userinfo(credentials.credentials)
+    except KeycloakAuthenticationError as exc:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Токен недействителен") from exc
+    return userinfo
