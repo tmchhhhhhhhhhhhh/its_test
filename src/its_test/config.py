@@ -22,7 +22,14 @@ class Settings(BaseSettings):
     smtp_port: int = 587
     smtp_user: str = ""
     smtp_password: str = ""
-    smtp_from: str = "no-reply@example.com"
+    smtp_from: str = ""
+
+    keycloak_url: str
+    keycloak_realm: str
+    keycloak_client_id: str
+    keycloak_client_secret: str
+    keycloak_admin_user: str
+    keycloak_admin_password: str
 
     base_url: str
 
@@ -45,4 +52,4 @@ class Settings(BaseSettings):
         return f"redis://{self.redis_host}:{self.redis_port}/{self.redis_db}"
 
 
-settings = Settings()
+settings = Settings() # type: ignore

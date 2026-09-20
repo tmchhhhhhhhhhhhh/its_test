@@ -9,8 +9,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      redis:
-        condition: service_healthy
     command: >
       sh -c "uv run alembic upgrade head && uv run uvicorn its_test.main:app --host 0.0.0.0 --port 8000"
 
@@ -29,16 +27,19 @@ services:
       timeout: 5s
       retries: 5
 
-  redis:
-    image: redis:7-alpine
-    container_name: its_test_redis
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.7.0
+    container_name: its_test_keycloak
+    command: start-dev --import-realm
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
     ports:
-      - "6379:6379"
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+      - "8080:8080"
+    volumes:
+      - keycloak_data:/opt/keycloak/data
+      - ./keycloak/its-test.json:/opt/keycloak/data/import/its-test.json
 
 volumes:
   postgres_data:
+  keycloak_data:
