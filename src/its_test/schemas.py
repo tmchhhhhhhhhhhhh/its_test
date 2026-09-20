@@ -12,7 +12,7 @@ class UserLogin(BaseModel):
     email: EmailStr
     password: str
 
-
+#походу тоже deprecated
 class UserOut(BaseModel):
     id: uuid.UUID
     email: EmailStr

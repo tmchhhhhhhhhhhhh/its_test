@@ -34,7 +34,7 @@ async def healthcheck(db: AsyncSession = Depends(get_db)):
 @app.post("/auth/register", response_model=MessageOut, status_code=status.HTTP_201_CREATED)
 async def register(data: UserCreate):
     try:
-        keycloak_admin.create_user(
+        user_id = keycloak_admin.create_user(
             {
                 "email": data.email,
                 "username": data.email,
@@ -46,11 +46,12 @@ async def register(data: UserCreate):
             }
         )
     except KeycloakAuthenticationError as exc:
-        raise HTTPException(status_code=502, detail="Не удалось подключиться к Keycloak") from exc
+        raise HTTPException(status_code=502, detail="Не удалось подключиться к Keycloak как admin") from exc
     except KeycloakPostError as exc:
         raise HTTPException(status_code=409, detail="Пользователь уже существует") from exc
 
-    return MessageOut(message="Регистрация выполнена")
+    keycloak_admin.send_verify_email(user_id=user_id)
+    return MessageOut(message="Регистрация выполнена. Проверьте почту для подтверждения аккаунта")
 
 
 @app.post("/auth/login", response_model=TokenOut)
@@ -58,10 +59,13 @@ async def login(data: UserLogin):
     try:
         token = await keycloak_openid.a_token(data.email, data.password)
     except KeycloakAuthenticationError as exc:
-        print(exc)
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Неверная почта или пароль") from exc
+        raise HTTPException(status_code=401, detail="Неверная почта или пароль") from exc
 
-    return TokenOut(access_token=token["access_token"], expires_at="") 
+    userinfo = await keycloak_openid.a_userinfo(token["access_token"])
+    if not userinfo.get("email_verified", False):
+        raise HTTPException(status_code=403, detail="Почта не подтверждена")
+
+    return TokenOut(access_token=token["access_token"], expires_at="")
 
 
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)) -> dict:

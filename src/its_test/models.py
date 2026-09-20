@@ -25,7 +25,7 @@ class Entity:
         onupdate=lambda: datetime.now(UTC),
     )
 
-
+#deprecated
 class User(Entity, Base):
     __tablename__ = "users"
 
